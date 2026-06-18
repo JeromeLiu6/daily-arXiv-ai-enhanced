@@ -183,24 +183,23 @@ jobs:
           git config user.email "${{ vars.EMAIL_FROM || 'github-actions[bot]@users.noreply.github.com' }}"
           git config user.name "github-actions[bot]"
 
-          if git ls-remote --exit-code --heads origin data; then
-            git fetch origin data
-            git checkout data
-            git pull origin data --rebase || true
+          if git ls-remote --exit-code --heads origin refs/heads/data; then
+            git fetch origin refs/heads/data:refs/remotes/origin/data
+            git checkout -B data refs/remotes/origin/data
           else
-            git checkout --orphan data
-            git rm -rf --cached . 2>/dev/null || true
+            git switch --orphan data
+            git rm -rf --cached -- . 2>/dev/null || true
             find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
             echo "# Data Branch" > README.md
-            git add README.md
+            git add -- README.md
             git commit -m "chore: initialize data branch"
-            git push origin data
+            git push origin HEAD:refs/heads/data
           fi
 
           mkdir -p data assets
           cp /tmp/research-radar-data/data/* data/
           ls data/* | sed 's|data/||' | sort > assets/file-list.txt
-          git add \
+          git add -- \
             "data/${REPORT_DATE}_research_radar.html" \
             "data/${REPORT_DATE}_research_radar.md" \
             "data/${REPORT_DATE}_research_radar_enhanced.jsonl" \
@@ -211,7 +210,7 @@ jobs:
             echo "No report file changes to commit on data branch."
           else
             git commit -m "update: Daily Research Radar ${REPORT_DATE}"
-            git push origin data
+            git push origin HEAD:refs/heads/data
           fi
 
       - name: Email Daily Research Radar
